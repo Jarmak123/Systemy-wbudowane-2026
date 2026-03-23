@@ -24,16 +24,57 @@
 #include "adc.h"
 
 void alarm(){
+    ADC_SetConfiguration(ADC_CONFIGURATION_DEFAULT);
+    // ADC ma czytać potencjometr
+    ADC_ChannelEnable(ADC_CHANNEL_POTENTIOMETER);
+    // output LEDów PORT A
+    TRISA = 0x0000;
+    unsigned int value;
     int counter = 0;
+    
     while(1){
+        value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
+        // Błąd?
+        if (value == 0xFFFF) {
+        // W razie czego przechodzimy do kolejnej iteracji
+        continue;
+        }
+        // normalizacja zakresu do 0-255
+        unsigned char normalizedValue = value >> 2;
+        
         LATA = 0b10000000;
         __delay32(1000000);
         LATA = 0b00000000;
         __delay32(1000000);
         counter++;
         if(counter == 10) break;
+        if(normalizedValue < 0b10000000) break;
+        if(BUTTON_IsPressed ( BUTTON_S3 ) == true) break;
     }
     while(1){
+        value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
+        // Błąd?
+        if (value == 0xFFFF) {
+        // W razie czego przechodzimy do kolejnej iteracji
+        continue;
+        }
+        // normalizacja zakresu do 0-255
+        unsigned char normalizedValue = value >> 2;
+        if(normalizedValue <= 0b10000000) {
+            LATA=0b00000000;
+            break;
+        }
+        if(BUTTON_IsPressed ( BUTTON_S3 ) == true){
+            while(1){
+                LATA=0b00000000;
+                if(BUTTON_IsPressed ( BUTTON_S4 ) == true){
+                    break;
+                }
+            }
+        }
+        if(BUTTON_IsPressed ( BUTTON_S4 ) == true){
+            break;
+        }
         LATA = 0b11111111;
     }
 }
@@ -48,19 +89,17 @@ int main(void) {
  unsigned int value;
  while (1)
  {
-// // Czytanie 10-bit wartości z potencjometru
-// value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
-// // Błąd?
-// if (value == 0xFFFF) {
-// // W razie czego przechodzimy do kolejnej iteracji
-// continue;
-// }
-// // normalizacja zakresu do 0-255
-// unsigned char normalizedValue = value >> 2;
-// 
-// if(normalizedValue == 0b10000000) break; 
-// LATA = normalizedValue;
-     alarm();
+ // Czytanie 10-bit wartości z potencjometru
+ value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
+ // Błąd?
+ if (value == 0xFFFF) {
+ // W razie czego przechodzimy do kolejnej iteracji
+ continue;
+ }
+ // normalizacja zakresu do 0-255
+ unsigned char normalizedValue = value >> 2;
+ 
+ if(normalizedValue >= 0b10000000 && BUTTON_IsPressed ( BUTTON_S3 ) == false) alarm(); 
  }
  return 0;
 }
