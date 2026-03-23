@@ -33,25 +33,25 @@
 
 volatile unsigned int seconds = TOTAL_TIME;
 int main(void) {
-char buffer[16]; // bufor na znaki do wyświetlenia na ekranie
+char buffer[33]; // bufor na znaki do wyświetlenia na ekranie
 LCD_Initialize(); // inicjalizacja LCD
 unsigned int remainingSeconds = seconds;
-while(remainingSeconds > 1) {
-if (BUTTON_IsPressed ( BUTTON_S3 ) == true) {
-remainingSeconds = remainingSeconds + 30;
-} else if ((BUTTON_IsPressed ( BUTTON_S4 ) == true)) {
-remainingSeconds = remainingSeconds - 30;
-}
-unsigned char minutes = remainingSeconds / 60;
-unsigned char secs = remainingSeconds % 60;
-sprintf(buffer, "%02u:%02u", minutes, secs); // zapis czasu do bufora
-// wyświetlenie na ekranie
-LCD_ClearScreen();
-LCD_PutString(buffer, strlen(buffer));
-__delay32(4000000); //czekamy sekundę
-remainingSeconds--;
-}
-sprintf(buffer, "%12s", "koniec czasu");
+//while(remainingSeconds > 1) {
+//if (BUTTON_IsPressed ( BUTTON_S3 ) == true) {
+//remainingSeconds = remainingSeconds + 30;
+//} else if ((BUTTON_IsPressed ( BUTTON_S4 ) == true)) {
+//remainingSeconds = remainingSeconds - 30;
+//}
+//unsigned char minutes = remainingSeconds / 60;
+//unsigned char secs = remainingSeconds % 60;
+//sprintf(buffer, "%02u:%02u", minutes, secs); // zapis czasu do bufora
+//// wyświetlenie na ekranie
+//LCD_ClearScreen();
+//LCD_PutString(buffer, strlen(buffer));
+//__delay32(4000000); //czekamy sekundę
+//remainingSeconds--;
+//}
+sprintf(buffer, "%12s", "12345678912345678912345678912345");
 LCD_ClearScreen();
 LCD_PutString(buffer, strlen(buffer));
 __delay32(40000000); //czekamy 10 sekund
