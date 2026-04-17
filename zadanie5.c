@@ -182,31 +182,25 @@ unsigned char strzalkaPrawo[8] = {
 
 void remis(void){
     LCD_sendCommand(LCD_CLEAR);
+    
     bool p1_agree = false;
     bool p2_agree = false;
 
     while(1){
         LCD_setCursor(1, 0);
-        LCD_print("REMIS?");
+        LCD_print("REMIS?          ");
 
         LCD_setCursor(2, 0);
         LCD_print("G1:");
-        if(p1_agree){
-            LCD_sendData(0);
-        }
-        else {
-            LCD_sendData(1);
-        }
-
+        LCD_sendData(p1_agree ? 0 : 1);
         LCD_print(" G2:");
-        if(p2_agree){
-            LCD_sendData(0);
-        }
-        else {
-            LCD_sendData(1);
-        }
+        LCD_sendData(p2_agree ? 0 : 1);
 
-        if(p1_agree == true && p2_agree == true){
+        // POPRAWKA: odczyt przycisków i ustawianie zgody
+        if(BUTTON_IsPressed(BUTTON_S3)){ p1_agree = true; __delay_ms(200); }
+        if(BUTTON_IsPressed(BUTTON_S6)){ p2_agree = true; __delay_ms(200); }
+
+        if(p1_agree && p2_agree){
             LCD_sendCommand(LCD_CLEAR);
             LCD_setCursor(1, 0);
             LCD_print("KONIEC GRY");
@@ -215,7 +209,6 @@ void remis(void){
             break;
         }
     }
-    
     while(1){
         if (BUTTON_IsPressed(BUTTON_S6)) break;
     }
@@ -248,26 +241,21 @@ bool poddanie_G1(void){
 
 bool poddanie_G2(void){
     LCD_sendCommand(LCD_CLEAR);
-    while (1)
-    {
-        LCD_sendCommand(LCD_CLEAR);
+    while(1){
         LCD_setCursor(1, 0);
-        LCD_print("G1 - PODDANIE");
+        LCD_print("G2 - PODDANIE");
         LCD_setCursor(2, 0);
-        LCD_print("POTWIERDZENIE?");
-        if(BUTTON_IsPressed(BUTTON_S5)==true)
-        {
+        LCD_print("S5=TAK  S6=NIE");
+        if(BUTTON_IsPressed(BUTTON_S5)){
             LCD_sendCommand(LCD_CLEAR);
             LCD_setCursor(1, 0);
             LCD_print("G2 - PODDANIE");
             LCD_setCursor(2, 0);
             LCD_print("WYGRANA G1");
+            __delay_ms(2000);
             return true;
         }
-        if(BUTTON_IsPressed(BUTTON_S6)==true)
-        {
-            return false;
-        }
+        if(BUTTON_IsPressed(BUTTON_S6)) return false;
     }
 }
 
@@ -278,131 +266,74 @@ void mechanism(void){
     bool p1_first = false;
     bool p2_part = false;
     bool p2_first = false;
-    
+
     while(1){
         LCD_setCursor(1, 0);
-        LCD_print("Kto zaczyna?");
+        LCD_print("Kto zaczyna?    ");
         LCD_setCursor(2, 0);
-        LCD_print("G1 G2");
-        if (BUTTON_IsPressed(BUTTON_S3)) {
-            p1_part = true;
-            p1_first = true;
-        }
-        else if((BUTTON_IsPressed(BUTTON_S6))){
-            p2_part = true;
-            p2_first = true;
-        }
-
-        if(p1_part == true || p2_part == true) break;
+        LCD_print("S3=G1    S6=G2  ");
+        if(BUTTON_IsPressed(BUTTON_S3)){ p1_part = true; p1_first = true; break; }
+        if(BUTTON_IsPressed(BUTTON_S6)){ p2_part = true; p2_first = true; break; }
     }
-
+    __delay_ms(300);
     LCD_sendCommand(LCD_CLEAR);
 
     while(1){
-        unsigned char minutes = player1 / 60;
-        unsigned char secs = player1 % 60;
-        LCD_setCursor(1,0);
-        if (p1_part == true){
-            LCD_sendData(2);
-        }else{
-            LCD_print(" ");
-        }
-        if(p1_first==true){
-            LCD_sendData(1);
-        }else{
-            LCD_sendData(0);
-        }
-        sprintf(buffer, "G1: %02u:%02u", minutes, secs);
+
+        unsigned char min1 = (unsigned char)(player1 / 60);
+        unsigned char sec1 = (unsigned char)(player1 % 60);
+        LCD_setCursor(1, 0);
+        if(p1_part) LCD_sendData(2); else LCD_print(" ");
+        if(p1_first) LCD_sendData(1); else LCD_sendData(0);
+        sprintf(buffer, "G1:%02u:%02u", min1, sec1);
         LCD_print(buffer);
 
-        unsigned char minutes = player2 / 60;
-        unsigned char secs = player2 % 60;
-        LCD_setCursor(2,0);
-        sprintf(buffer, "%02u:%02u :G2", minutes, secs);
+        unsigned char min2 = (unsigned char)(player2 / 60);
+        unsigned char sec2 = (unsigned char)(player2 % 60);
+        LCD_setCursor(2, 0);
+        if(p2_part) LCD_sendData(3); else LCD_print(" ");
+        if(p2_first) LCD_sendData(1); else LCD_sendData(0);
+        sprintf(buffer, "G2:%02u:%02u", min2, sec2);
         LCD_print(buffer);
-        if (p2_part == true){
-            LCD_sendData(3);
-        }else{
-            LCD_print(" ");
-        }
-        if(p2_first==true){
-            LCD_sendData(1);
-        }else{
-            LCD_sendData(0);
-        }
 
-        if(BUTTON_IsPressed(BUTTON_S3) && p1_part == true){
-            p1_part = false;
-            p2_part = true;
-        }
-        if(BUTTON_IsPressed(BUTTON_S6) && p2_part == true){
-            p1_part = true;
-            p2_part = false;
-        }
 
-        if(BUTTON_IsPressed(BUTTON_S4)==true){
-            if(poddanie_G1()) break;
-        }
-
-        if(BUTTON_IsPressed(BUTTON_S5)==true){
-            if(poddanie_G2()) break;
-        }
-        
-        for(int i = 0; i < 100; i++) {
-            if(BUTTON_IsPressed(BUTTON_S3) && p1_part) {
+        int i;
+        for(i = 0; i < 100; i++){
+            if(BUTTON_IsPressed(BUTTON_S3) && p1_part){
                 p1_part = false; p2_part = true;
                 __delay_ms(200);
-                break; 
+                break;
             }
-            if(BUTTON_IsPressed(BUTTON_S6) && p2_part) {
+            if(BUTTON_IsPressed(BUTTON_S6) && p2_part){
                 p1_part = true; p2_part = false;
                 __delay_ms(200);
                 break;
             }
-            
-            if(BUTTON_IsPressed(BUTTON_S4)) { if(poddanie_G1()) return; }
-            if(BUTTON_IsPressed(BUTTON_S5)) { if(poddanie_G2()) return; }
-
+            if(BUTTON_IsPressed(BUTTON_S4)){ if(poddanie_G1()) return; LCD_sendCommand(LCD_CLEAR); break; }
+            if(BUTTON_IsPressed(BUTTON_S5)){ if(poddanie_G2()) return; LCD_sendCommand(LCD_CLEAR); break; }
             __delay_ms(10);
         }
 
-        if(BUTTON_IsPressed(BUTTON_S3) && p1_part == true){
-            p1_part = false;
-            p2_part = true;
-        }
-        if(BUTTON_IsPressed(BUTTON_S6) && p2_part == true){
-            p1_part = true;
-            p2_part = false;
-        }
+        if(p1_part && player1 > 0) player1--;
+        if(p2_part && player2 > 0) player2--;
 
-        if(p1_part==true) player1--;
-        if(p2_part==true) player2--;
-
-        if(player1 == 0){
+        if(player1 <= 0){
             LCD_sendCommand(LCD_CLEAR);
-            LCD_setCursor(1,0);
+            LCD_setCursor(1, 0);
             LCD_print("KONIEC CZASU");
-            LCD_setCursor(1,0);
+            LCD_setCursor(2, 0);
             LCD_print("WYGRANA G2");
-            break;
-        }else if(player2 == 0){
+            return;
+        }
+        if(player2 <= 0){
             LCD_sendCommand(LCD_CLEAR);
-            LCD_setCursor(1,0);
+            LCD_setCursor(1, 0);
             LCD_print("KONIEC CZASU");
-            LCD_setCursor(1,0);
+            LCD_setCursor(2, 0);
             LCD_print("WYGRANA G1");
-            break;
-        }
-
-        if(BUTTON_IsPressed(BUTTON_S4)==true){
-            if(poddanie_G1()) break;
-        }
-
-        if(BUTTON_IsPressed(BUTTON_S5)==true){
-            if(poddanie_G2()) break;
+            return;
         }
     }
-
 }
 
 void menu(void){
@@ -412,49 +343,37 @@ void menu(void){
         LCD_setCursor(1, 0);
         LCD_print("WYBIERZ TRYB GRY");
         LCD_setCursor(2, 0);
-        if (BUTTON_IsPressed(BUTTON_S6)) i++;
-        if (BUTTON_IsPressed(BUTTON_S3)) i--;
-        __delay_ms(200)
-        if(i==0) {
-            LCD_print("1. BULLET 1m");
-            player1 = 60;
-            player2 = 60;
-        }
-        else if (i==1) {
-            LCD_print("2. BLITZ 5m");
-            player1 = 300;
-            player2 = 300;
-        }
-        else if (i==2) {
-            LCD_print("3. RAPID 10m");
-            player1 = 600;
-            player2 = 600;
-        }
-        else if (i==3) {
-            LCD_print("4.CLASSICAL 60m");
-            player1 = 3600;
-            player2 = 3600;
-        }
-        else {
-            i=0;
+
+        if(BUTTON_IsPressed(BUTTON_S6)){ i++; __delay_ms(200); }
+        if(BUTTON_IsPressed(BUTTON_S3)){ i--; __delay_ms(200); }
+        if(i < 0) i = 3;
+        if(i > 3) i = 0;
+
+        if(i == 0){
+            LCD_print("1. BULLET 1m    ");
+            player1 = 60; player2 = 60;
+        } else if(i == 1){
+            LCD_print("2. BLITZ 5m     ");
+            player1 = 300; player2 = 300;
+        } else if(i == 2){
+            LCD_print("3. RAPID 10m    ");
+            player1 = 600; player2 = 600;
+        } else {
+            LCD_print("4.CLASSICAL 60m ");
+            player1 = 3600; player2 = 3600;
         }
 
-        if (BUTTON_IsPressed(BUTTON_S5)) {
-            break;
-        }
+        if(BUTTON_IsPressed(BUTTON_S5)){ __delay_ms(200); break; }
     }
 }
  
 int main(void) {
     AD1PCFG = 0xFFFB;
-    TRISB = 0x7FFF; 
+    TRISB = 0x7FFF;
     TRISD = 0x0000;
     TRISE = 0x0000;
-    
-    ADC_SetConfiguration(ADC_CONFIGURATION_DEFAULT);
-    ADC_ChannelEnable(ADC_CHANNEL_POTENTIOMETER);
 
-    LCD_init(); 
+    LCD_init();
     LCD_sendCommand(LCD_CLEAR);
 
     LCD_saveCustChar(0, czarny);
@@ -462,14 +381,13 @@ int main(void) {
     LCD_saveCustChar(2, strzalkaLewo);
     LCD_saveCustChar(3, strzalkaPrawo);
 
-    while(1) {
+    while(1){
         menu();
         mechanism();
         while(1){
-            if(BUTTON_IsPressed(BUTTON_S3)==true || BUTTON_IsPressed(BUTTON_S6)==true){
-                break;
-            }
+            if(BUTTON_IsPressed(BUTTON_S3) || BUTTON_IsPressed(BUTTON_S6)) break;
         }
+        __delay_ms(300);
     }
     return 0;
 }

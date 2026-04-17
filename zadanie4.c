@@ -57,7 +57,7 @@ char* title = "";
 unsigned char emptyChar[8] = {0,0,0,0,0,0,0,0};
 
 unsigned int map(unsigned int x, unsigned int in_min, unsigned int in_max, unsigned int out_min, unsigned int out_max) {
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    return (unsigned long)(x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 // Definicja funkcji delay w us i ms - operujących na jednostkach czasu zamiast cykli pracy oscylatora
@@ -134,21 +134,22 @@ void LCD_clearCustChars(void) {
 void ustawienie_czasu(void){
     LCD_sendCommand(LCD_CLEAR);
     char buffer[16];
+    LCD_setCursor(1, 0);
+    LCD_print("WYBIERZ CZAS    ");
 
     while(1){
         unsigned int rawADC = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
         if (rawADC != 0xFFFF) {
             remainingSeconds = map(rawADC, 0, 1023, 0, 600);
         }
-        LCD_setCursor(1,0);
-        LCD_print("WYBIERZ CZAS");
 
         unsigned char minutes = remainingSeconds / 60;
         unsigned char secs = remainingSeconds % 60;
-
-        sprintf(buffer, "%02u:%02u         ", minutes, secs);
+        sprintf(buffer, "%02u:%02u          ", minutes, secs);
         LCD_setCursor(2, 0);
         LCD_print(buffer);
+
+        __delay_ms(100);
 
         if (BUTTON_IsPressed(BUTTON_S6)) break;
     }
@@ -157,32 +158,28 @@ void ustawienie_czasu(void){
 void ustawienie_mocy(void){
     LCD_sendCommand(LCD_CLEAR);
     char buffer[16];
+    // POPRAWKA 2: tekst statyczny wyświetlamy raz przed pętlą — nie migocze
+    LCD_setCursor(1, 0);
+    LCD_print("WYBIERZ MOC     ");
 
     while(1){
         unsigned int rawADC = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
         if (rawADC != 0xFFFF) {
             wats = map(rawADC, 0, 1023, 100, 1200);
         }
-        LCD_setCursor(1,0);
-        LCD_print("WYBIERZ MOC");
-        if (wats <= 200) {
-            title = "DEFROST";
-        } 
-        else if (wats <= 400) {
-            title = "LOW";
-        } 
-        else if (wats <= 900) {
-            title = "MEDIUM";
-        } 
-        else {
-            title = "HIGH";
-        }
+
+        if (wats <= 200)       title = "DEFROST";
+        else if (wats <= 400)  title = "LOW    ";
+        else if (wats <= 900)  title = "MEDIUM ";
+        else                   title = "HIGH   ";
 
         if (wats > 1200) wats = 100;
 
-        sprintf(buffer, "%dW, %s      ", wats, title);
+        sprintf(buffer, "%4dW, %s", wats, title);
         LCD_setCursor(2, 0);
         LCD_print(buffer);
+
+        __delay_ms(100);
 
         if (BUTTON_IsPressed(BUTTON_S6)) break;
     }
@@ -199,21 +196,20 @@ void proces(void){
     char buffer[16];
 
     while(remainingSeconds > 0) {
-        if (BUTTON_IsPressed(BUTTON_S6)) break;
-
-        LCD_setCursor(1,0);
-        sprintf(buffer, "GRZANIE: %s", title);
+        LCD_setCursor(1, 0);
+        sprintf(buffer, "GRZANIE: %-6s", title);
         LCD_print(buffer);
-
-        if (BUTTON_IsPressed(BUTTON_S5)) pause_proces();
 
         unsigned char minutes = remainingSeconds / 60;
         unsigned char secs = remainingSeconds % 60;
-        LCD_setCursor(2,0);
-        sprintf(buffer, "POZOSTALO: %02u:%02u", minutes, secs);
+        LCD_setCursor(2, 0);
+        sprintf(buffer, "POZOSTALO:%02u:%02u", minutes, secs);
         LCD_print(buffer);
 
-        __delay32(4000000); //czekamy sekundę
+        if (BUTTON_IsPressed(BUTTON_S6)) break;
+        if (BUTTON_IsPressed(BUTTON_S5)) pause_proces();
+
+        __delay32(4000000);
         remainingSeconds--;
     }
 }
