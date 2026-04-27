@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "lcd.h"
+#include "adc.h"
 #include "buttons.h"
 #define TOTAL_TIME (300) // w sekundach
 #define FCY 4000000UL
@@ -51,7 +52,7 @@ void ustawienie_czasu(void) {
         sprintf(buffer, "%02u:%02u", minutes, secs);
  
         LCD_ClearScreen();
-        LCD_PutString("WYBIERZ CZAS", 12);
+        LCD_PutString("WYBIERZ CZAS    ", 16);
         LCD_PutString(buffer, strlen(buffer));
  
         __delay32(FCY / 10); // ~100 ms
@@ -80,7 +81,7 @@ void ustawienie_mocy(void) {
         sprintf(buffer, "%4dW, %s", wats, title);
  
         LCD_ClearScreen();
-        LCD_PutString("WYBIERZ MOC ", 11);
+        LCD_PutString("WYBIERZ MOC    ", 15);
         LCD_PutString(buffer, strlen(buffer));
  
         __delay32(FCY / 10);
@@ -91,7 +92,7 @@ void ustawienie_mocy(void) {
 
 void pause_proces(void) {
     while (1) {
-        if (BUTTON_IsPressed(BUTTON_S5)) break;
+        if (BUTTON_IsPressed(BUTTON_S3)) break;
     }
 }
 
@@ -102,14 +103,14 @@ void proces(void) {
     while (remainingSeconds > 0) {
         sprintf(buffer, "GRZANIE: %s", title);
         LCD_ClearScreen();
-        LCD_PutString(buffer, strlen(buffer));
+        LCD_PutString(buffer, 16);
  
         unsigned char minutes = remainingSeconds / 60;
         unsigned char secs = remainingSeconds % 60;
         sprintf(buffer, "POZOSTALO:%02u:%02u", minutes, secs);
         LCD_PutString(buffer, strlen(buffer));
  
-        if (BUTTON_IsPressed(BUTTON_S6)) break;
+        if (BUTTON_IsPressed(BUTTON_S3)) break;
         if (BUTTON_IsPressed(BUTTON_S5)) pause_proces();
  
         __delay32(4000000);
@@ -120,7 +121,7 @@ void proces(void) {
 void post_proces(void) {
     while (1) {
         LCD_ClearScreen();
-        LCD_PutString("KONIEC CZASU!", 13);
+        LCD_PutString("KONIEC CZASU!   ", 16);
         LCD_PutString("WYCIAGNIJ DANIE", 15);
  
         if (BUTTON_IsPressed(BUTTON_S6)) break;
