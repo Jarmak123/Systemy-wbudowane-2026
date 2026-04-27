@@ -41,20 +41,21 @@ bool remis(void){
 
     while(1){
         LCD_ClearScreen();
-        LCD_PutString("REMIS?", 6);
-        sprintf(buffer, "G1:%02uG2:%02u", p1_agree, p2_agree);
+        LCD_PutString("REMIS?          ", 16);
+        sprintf(buffer, "G1:%01u G2:%01u", p1_agree, p2_agree);
         LCD_PutString(buffer, strlen(buffer));
 
         if(BUTTON_IsPressed(BUTTON_S3)){ p1_agree = 1; __delay32(FCY / 5); }
-        if(BUTTON_IsPressed(BUTTON_S6)){ p2_agree = 1; __delay32(FCY / 5); }
-        if(BUTTON_IsPressed(BUTTON_S5) || BUTTON_IsPressed(BUTTON_S4)) return false;
+        if(BUTTON_IsPressed(BUTTON_S4)){ p2_agree = 1; __delay32(FCY / 5); }
+        if(BUTTON_IsPressed(BUTTON_S6) || BUTTON_IsPressed(BUTTON_S5)) return false;
 
         if(p1_agree && p2_agree){
             LCD_ClearScreen();
-            LCD_PutString("MECZ ZAKOŃCZONY REMISEM", 25);
+            LCD_PutString("MECZ ZAKONCZONY REMISEM", 25);
             __delay32(FCY * 3);
             return true;
         }
+        __delay32(FCY / 5);
     }
 }
 
@@ -64,11 +65,11 @@ bool poddanie_G1(void){
     while (1)
     {
         LCD_ClearScreen();
-        LCD_PutString("G1 - PODDANIE S4=TAK  S3=NIE", 29);
-        if(BUTTON_IsPressed(BUTTON_S4)==true)
+        LCD_PutString("G1 - PODDANIE   S5=TAK  S3=NIE", 31);
+        if(BUTTON_IsPressed(BUTTON_S5)==true)
         {
             LCD_ClearScreen();
-            LCD_PutString("G1 - PODDANIE WYGRANA G2", 25);
+            LCD_PutString("G1 - PODDANIE   WYGRANA G2", 27);
             __delay32(FCY * 3);
             return true;
         }
@@ -76,6 +77,7 @@ bool poddanie_G1(void){
         {
             return false;
         }
+        __delay32(FCY / 5);
     }
 }
 
@@ -84,15 +86,16 @@ bool poddanie_G2(void){
     char buffer[16];
     while(1){
         LCD_ClearScreen();
-        LCD_PutString("G2 - PODDANIE S5=TAK  S6=NIE", 29);
+        LCD_PutString("G2 - PODDANIE   S6=TAK  S4=NIE", 31);
 
-        if(BUTTON_IsPressed(BUTTON_S5)){
+        if(BUTTON_IsPressed(BUTTON_S6)){
             LCD_ClearScreen();
-            LCD_PutString("G2 - PODDANIE WYGRANA G1", 25);
+            LCD_PutString("G2 - PODDANIE   WYGRANA G1", 27);
             __delay32(FCY * 3);
             return true;
         }
-        if(BUTTON_IsPressed(BUTTON_S6)) return false;
+        if(BUTTON_IsPressed(BUTTON_S4)) return false;
+        __delay32(FCY / 5);
     }
 }
 
@@ -107,9 +110,10 @@ void mechanism(void){
 
     while(1){
         LCD_ClearScreen();
-        LCD_PutString("Kto zaczyna? S3=G1 S6=G2", 25);
+        LCD_PutString("Kto zaczyna?     S3=G1 S4=G2", 32);
         if(BUTTON_IsPressed(BUTTON_S3)){ p1_part = true; p1_first = true; break; }
-        if(BUTTON_IsPressed(BUTTON_S6)){ p2_part = true; p2_first = true; break; }
+        if(BUTTON_IsPressed(BUTTON_S4)){ p2_part = true; p2_first = true; break; }
+        __delay32(FCY / 5);
     }
     __delay32(FCY / 5);
    LCD_ClearScreen();
@@ -120,13 +124,13 @@ void mechanism(void){
         unsigned char min1 = (unsigned char)(player1 / 60);
         unsigned char sec1 = (unsigned char)(player1 % 60);
         if(p1_part) LCD_PutString("<",1); else LCD_PutString(" ",1);
-        sprintf(buffer1, "G1:%02u:%02u", min1, sec1);
-        LCD_PutString(buffer1, strlen(buffer1));
+        sprintf(buffer1, "G1:%02u:%02u       ", min1, sec1);
+        LCD_PutString(buffer1, 15);
 
         unsigned char min2 = (unsigned char)(player2 / 60);
         unsigned char sec2 = (unsigned char)(player2 % 60);
-        sprintf(buffer2, "%02u:%02u:G2", min2, sec2);
-        LCD_PutString(buffer2, strlen(buffer2));
+        sprintf(buffer2, "       %02u:%02u:G2", min2, sec2);
+        LCD_PutString(buffer2, 15);
         if(p2_part) LCD_PutString(">",1); else LCD_PutString(" ", 1);
 
 
@@ -137,14 +141,14 @@ void mechanism(void){
                 __delay32(FCY / 100);
                 break;
             }
-            if(BUTTON_IsPressed(BUTTON_S6) && p2_part){
+            if(BUTTON_IsPressed(BUTTON_S4) && p2_part){
                 p1_part = true; p2_part = false;
                 __delay32(FCY / 100);
                 break;
             }
-            if(BUTTON_IsPressed(BUTTON_S4)){ if(poddanie_G1()) return; LCD_ClearScreen(); break; }
+            if(BUTTON_IsPressed(BUTTON_S6)){ if(poddanie_G1()) return; LCD_ClearScreen(); break; }
             if(BUTTON_IsPressed(BUTTON_S5)){ if(poddanie_G2()) return; LCD_ClearScreen(); break; }
-            if(p1_part == true && BUTTON_IsPressed(BUTTON_S6)){ if(remis()) return; LCD_ClearScreen(); break; }
+            if(p1_part == true && BUTTON_IsPressed(BUTTON_S4)){ if(remis()) return; LCD_ClearScreen(); break; }
             if(p2_part == true && BUTTON_IsPressed(BUTTON_S3)){ if(remis()) return; LCD_ClearScreen(); break; }
             
             __delay32(FCY / 100);
@@ -165,6 +169,7 @@ void mechanism(void){
             __delay32(FCY * 3);
             return;
         }
+        __delay32(FCY / 5);
     }
 }
 
@@ -173,7 +178,7 @@ void menu(void){
     int i = 0;
     while(1){
         LCD_ClearScreen();
-        LCD_PutString("WYBIERZ TRYB GRY ", 17);
+        LCD_PutString("WYBIERZ TRYB GRY", 16);
         if(BUTTON_IsPressed(BUTTON_S6)){ i++; __delay32(FCY / 5); }
         if(BUTTON_IsPressed(BUTTON_S3)){ i--; __delay32(FCY / 5); }
         if(i < 0) i = 3;
@@ -194,6 +199,7 @@ void menu(void){
         }
 
         if(BUTTON_IsPressed(BUTTON_S5)){ __delay32(FCY / 5); break; }
+        __delay32(FCY / 5);
     }
 }
 
